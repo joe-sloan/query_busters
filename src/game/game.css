@@ -20,7 +20,6 @@
   border-top: 15px solid limegreen;
 }
 
-
 .bullet {
   width: 5px;
   height: 15px;
@@ -31,5 +30,9 @@
 
 .word {
   position: absolute;
-  color: white; /* Optional: make words visible */
+  color: white;
+  font-family: 'Courier New', monospace; /* Monospaced font for code look */
+  font-size: 16px;
+  white-space: pre-wrap; /* Preserve line breaks */
+  text-align: left;
 }
