@@ -36,3 +36,19 @@
   white-space: pre-wrap; /* Preserve line breaks */
   text-align: left;
 }
+
+.sql-line {
+  position: absolute;
+  font-family: monospace;
+  color: white;
+}
+
+.line-number {
+  position: absolute;
+  left: 1rem; /* Keep numbers aligned on the left */
+  color: gray;
+  font-family: monospace;
+  text-align: right;
+  /* width: 10px; Fixed width for alignment */
+  pointer-events: none; /* Prevent bullets from interacting */
+}

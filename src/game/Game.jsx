@@ -10,18 +10,24 @@ const Game = () => {
   const speed = 2; // Player movement speed
   const bulletSpeed = 1; // Bullet speed
   const wordSpeed = -0.1; // Word rise speed
+  const [lineNumbersState, setLineNumbersState] = useState([]);
 
   // Multi-line SQL query as an array of strings
   const sqlQuery = [
     "SELECT u.id, u.name, u.age, u.country, COUNT(o.id) AS order_count",
-    "FROM users u",
-    "JOIN orders o ON u.id = o.user_id",
-    "WHERE u.age > 21 AND u.country = 'USA'",
-    "GROUP BY u.id",
-    "HAVING COUNT(o.id) > 5",
-    "ORDER BY order_count DESC",
-    "LIMIT 10;"
+    "  FROM users u",
+    "  JOIN orders o ON u.id = o.user_id",
+    "  WHERE u.age > 21 AND u.country = 'USA'",
+    "  GROUP BY u.id",
+    "  HAVING COUNT(o.id) > 5",
+    "  ORDER BY order_count DESC",
+    "  LIMIT 10;"
   ];
+
+
+  // Fixed line numbers (won't disappear)
+  const totalLines = sqlQuery.length;
+  const lineNumbers = Array.from({ length: sqlQuery.length }, (_, i) => i + 1);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -88,7 +94,13 @@ const Game = () => {
       setWords((prevWords) =>
         prevWords
           .map((word) => ({ ...word, top: word.top + wordSpeed }))
-          .filter((word) => word.top < 100) // Keep words within bounds
+          .filter((word) => word.top < 100)
+      );
+    
+      setLineNumbersState((prevLineNumbers) =>
+        prevLineNumbers
+          .map((line) => ({ ...line, top: line.top + wordSpeed }))
+          .filter((line) => line.top < 100) // Keep within bounds
       );
     };
 
@@ -99,10 +111,10 @@ const Game = () => {
           let bulletHit = false;
           const updatedWords = words.filter((word, wordIndex) => {
             if (!bulletHit &&
-                bullet.left >= word.left &&
-                bullet.left <= word.left + 10 &&
-                bullet.top <= word.top + 10 &&
-                bullet.top >= word.top) {
+              bullet.left >= word.left &&
+              bullet.left <= word.left + 10 &&
+              bullet.top <= word.top + 10 &&
+              bullet.top >= word.top) {
               bulletHit = true;
               return false; // Remove this specific word
             }
@@ -128,14 +140,21 @@ const Game = () => {
   }, [bullets, words]);
 
   // Initialize words (SQL lines) at the bottom
+
   useEffect(() => {
-    const initialWords = sqlQuery.reverse().map((line, index) => ({
-      word: line,
-      left: 10, // Align text to the left
-      top: 95 - index * 6, // Stagger lines downward
+    const initialWords = sqlQuery.map((word, index) => ({
+      word,
+      left: 4, // Align SQL text to the right of numbers
+      top: 95 - index * 2.5, // Maintain spacing
+    }));
+  
+    const initialLineNumbers = sqlQuery.map((_, index) => ({
+      number: sqlQuery.length - index, // Reverse the numbering
+      top: 95 - index * 2.5, // Keeps spacing in sync with SQL lines
     }));
   
     setWords(initialWords);
+    setLineNumbersState(initialLineNumbers);
   }, []);
 
   return (
@@ -152,11 +171,22 @@ const Game = () => {
         ></div>
       ))}
 
-      {/* SQL Query Lines */}
+      {/* Scrolling Line Numbers */}
+      {lineNumbersState.map((line, index) => (
+        <div
+          key={`line-${index}`}
+          className="line-number"
+          style={{ top: `${line.top}%` }}
+        >
+          {line.number}
+        </div>
+      ))}
+
+      {/* SQL Lines */}
       {words.map((word, index) => (
         <div
-          key={index}
-          className="word"
+          key={`sql-${index}`}
+          className="sql-line"
           style={{ left: `${word.left}%`, top: `${word.top}%` }}
         >
           {word.word}
