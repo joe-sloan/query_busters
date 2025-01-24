@@ -1,0 +1,35 @@
+.game-container {
+  width: 60vw; /* Adjust width as needed */
+  height: 100vh; /* Full height of the viewport */
+  background-color: #131313;
+  position: relative;
+  overflow: hidden;
+}
+
+.player {
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: 10px; /* Position the player near the top */
+  left: 50%;
+  transform: translateX(-50%); /* Center horizontally */
+
+  /* Create a downward-facing triangle */
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 15px solid limegreen;
+}
+
+
+.bullet {
+  width: 5px;
+  height: 15px;
+  background-color: rgb(76, 76, 228);
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.word {
+  position: absolute;
+  color: white; /* Optional: make words visible */
+}
