@@ -100,7 +100,7 @@ const Game = () => {
 
   useEffect(() => {
     let animationFrameId;
-
+  
     const moveBullets = () => {
       setBullets((prevBullets) =>
         prevBullets
@@ -108,38 +108,44 @@ const Game = () => {
           .filter((bullet) => bullet.top < 100)
       );
     };
-
-    const moveWords = () => {
-      setWords((prevWords) =>
-        prevWords
-          .map((word) => ({ ...word, top: word.top + wordSpeed }))
-          .filter((word) => word.top < 100)
-      );
-    
-      setLineNumbersState((prevLineNumbers) =>
-        prevLineNumbers
-          .map((line) => ({ ...line, top: line.top + wordSpeed }))
-          .filter((line) => line.top < 100)
-      );
+  
+    const moveWordsAndLineNumbers = () => {
+      // Check if the first SQL line has reached the top
+      const firstWordAtTop = words.some((word) => word.top <= 0);
+  
+      if (!firstWordAtTop) {
+        // Move both SQL lines and line numbers if none has reached the top
+        setWords((prevWords) =>
+          prevWords
+            .map((word) => ({ ...word, top: word.top + wordSpeed }))
+            .filter((word) => word.top < 100)
+        );
+  
+        setLineNumbersState((prevLineNumbers) =>
+          prevLineNumbers
+            .map((line) => ({ ...line, top: line.top + wordSpeed }))
+            .filter((line) => line.top < 100)
+        );
+      }
     };
-
+  
     const checkCollisions = () => {
       setBullets((prevBullets) =>
         prevBullets.filter((bullet) => {
           let bulletHit = false;
-    
+  
           // Split lines into individual words
           const updatedWords = words.map((wordObj) => {
             // Split the line into individual words
             const wordParts = wordObj.word.split(/\s+/);
-    
+  
             // Track which words are hit
             const remainingParts = wordParts.filter((part) => {
               const partLeft = wordObj.left + wordParts.indexOf(part) * (part.length * 10);
               const partTop = wordObj.top;
               const partWidth = part.length * 10;
               const partHeight = 16;
-    
+  
               // Check collision for this specific word
               const isHit = (
                 bullet.left >= partLeft &&
@@ -147,21 +153,21 @@ const Game = () => {
                 bullet.top >= partTop &&
                 bullet.top <= partTop + partHeight
               );
-    
+  
               if (isHit) {
                 bulletHit = true;
               }
-    
+  
               return !isHit;
             });
-    
+  
             // Reconstruct the line with remaining words
             return {
               ...wordObj,
               word: remainingParts.join(' ')
             };
           });
-    
+  
           if (bulletHit) {
             // Remove lines with no words left
             setWords(updatedWords.filter(wordObj => wordObj.word.trim() !== ''));
@@ -171,15 +177,15 @@ const Game = () => {
         })
       );
     };
-
+  
     animationFrameId = requestAnimationFrame(() => {
       moveBullets();
-      moveWords();
+      moveWordsAndLineNumbers(); // Move both SQL lines and line numbers together
       checkCollisions();
     });
-
+  
     return () => cancelAnimationFrame(animationFrameId);
-  }, [bullets, words]);
+  }, [bullets, words, lineNumbersState]);
 
   useEffect(() => {
     const reversedSQLQuery = [...sqlQuery].reverse();
