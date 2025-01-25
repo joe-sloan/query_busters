@@ -1,29 +1,28 @@
 .game-container {
   width: 60vw; /* Adjust width as needed */
   height: 100vh; /* Full height of the viewport */
-  background-color: #131313;
-  position: relative;
+  background-color: #1e1e1e;
+  position: left;
   overflow: hidden;
 }
 
 .player {
-  width: 0;
-  height: 0;
+  width: 1rem;  /* Adjust size as needed */
+  height: 0.5rem; /* Adjust size as needed */
   position: absolute;
   top: 10px; /* Position the player near the top */
   left: 50%;
   transform: translateX(-50%); /* Center horizontally */
-
-  /* Create a downward-facing triangle */
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-top: 15px solid limegreen;
+  font-size: 1.5rem; /* Adjust size for better visibility */
+  color: limegreen; /* Set the color to lime green or any color you'd like */
+  text-align: center;
+  line-height: 2rem; /* Vertically center the character */
 }
 
 .bullet {
-  width: 5px;
-  height: 15px;
-  background-color: rgb(76, 76, 228);
+  width: 3px;
+  height: 8px;
+  background-color: rgb(140, 154, 229);
   position: absolute;
   transform: translateX(-50%);
 }
@@ -32,7 +31,7 @@
   position: absolute;
   color: white;
   font-family: 'Courier New', monospace; /* Monospaced font for code look */
-  font-size: 16px;
+  font-size: 20px;
   white-space: pre-wrap; /* Preserve line breaks */
   text-align: left;
 }
@@ -41,6 +40,8 @@
   position: absolute;
   font-family: monospace;
   color: white;
+  font-size: 16px;
+
 }
 
 .line-number {
@@ -49,6 +50,8 @@
   color: gray;
   font-family: monospace;
   text-align: right;
-  /* width: 10px; Fixed width for alignment */
+  width: 10px; 
+  font-size: 16px;
+
   pointer-events: none; /* Prevent bullets from interacting */
 }
