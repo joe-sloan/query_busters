@@ -2,21 +2,20 @@ import { useState, useEffect, useRef } from "react";
 import "./game.css";
 
 const Game = () => {
-  const [position, setPosition] = useState(50); // Player's horizontal position
-  const [bullets, setBullets] = useState([]); // Bullet array
-  const [words, setWords] = useState([]); // Array of rising SQL lines
-  const keysPressed = useRef({}); // Track key states
-  const playerPosition = useRef(50); // Player's position stored in ref
-  const speed = 0.2; // Player movement speed
-  const bulletSpeed = 1; // Bullet speed
-  const wordSpeed = -0.1; // Word rise speed
+  const [position, setPosition] = useState(50);
+  const [bullets, setBullets] = useState([]);
+  const [words, setWords] = useState([]);
+  const keysPressed = useRef({});
+  const playerPosition = useRef(50);
+  const speed = 0.2;
+  const bulletSpeed = 1;
+  const wordSpeed = -0.1;
   const [lineNumbersState, setLineNumbersState] = useState([]);
 
-  // Multi-line SQL query as an array of strings
   const sqlQuery = [
     "SELECT 'We are sorry for the inconvenience!' AS apology_message,",  
-    "   'If the problem persists, please contact our support team for assistance.' AS suggestion,",  
-    "   CURRENT_TIMESTAMP AS timestamp,",  
+    "'If the problem persists, please contact our support team for assistance.' AS suggestion,",  
+    "CURRENT_TIMESTAMP AS timestamp,",  
     "FROM error_logs e,",  
     "WHERE e.error_code = 404,",
     " ",
@@ -33,27 +32,21 @@ const Game = () => {
        "COUNT(e.equipment_id) AS total_equipment_used,",
        "MAX(t.time_in_orbit) AS max_time_in_orbit,",
        "lm.mission_outcome",
-"FROM lunar_missions lm",
-"JOIN astronauts a ON lm.mission_id = a.mission_id",
-"JOIN mission_data d ON lm.mission_id = d.mission_id",
-"JOIN equipment e ON lm.mission_id = e.mission_id",
-"JOIN time_log t ON lm.mission_id = t.mission_id",
-"WHERE lm.landing_site = 'Sea of Tranquility'",
-  "AND lm.launch_date BETWEEN '1969-07-01' AND '1969-07-30'",
-"GROUP BY lm.mission_name, ",
-         "lm.launch_date, ",
-         "lm.landing_site, ",
-         "a.astronaut_name, ",
-         "a.role, ",
-         "lm.mission_outcome",
-"ORDER BY lm.launch_date ASC;",
-    
+    "FROM lunar_missions lm",
+    "JOIN astronauts a ON lm.mission_id = a.mission_id",
+    "JOIN mission_data d ON lm.mission_id = d.mission_id",
+    "JOIN equipment e ON lm.mission_id = e.mission_id",
+    "JOIN time_log t ON lm.mission_id = t.mission_id",
+    "WHERE lm.landing_site = 'Sea of Tranquility'",
+    "AND lm.launch_date BETWEEN '1969-07-01' AND '1969-07-30'",
+    "GROUP BY lm.mission_name, ",
+             "lm.launch_date, ",
+             "lm.landing_site, ",
+             "a.astronaut_name, ",
+             "a.role, ",
+             "lm.mission_outcome",
+    "ORDER BY lm.launch_date ASC;"
   ];
-
-
-  // Fixed line numbers (won't disappear)
-  const totalLines = sqlQuery.length;
-  const lineNumbers = Array.from({ length: sqlQuery.length }, (_, i) => i + 1);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -75,7 +68,7 @@ const Game = () => {
       let newLeft = playerPosition.current;
     
       if (keysPressed.current["ArrowLeft"]) {
-        newLeft = Math.max(newLeft - speed, 0); // Reduce step size
+        newLeft = Math.max(newLeft - speed, 0);
       }
       if (keysPressed.current["ArrowRight"]) {
         newLeft = Math.min(newLeft + speed, 100);
@@ -105,7 +98,6 @@ const Game = () => {
     ]);
   };
 
-  // Move bullets and check for collision with words
   useEffect(() => {
     let animationFrameId;
 
@@ -127,41 +119,55 @@ const Game = () => {
       setLineNumbersState((prevLineNumbers) =>
         prevLineNumbers
           .map((line) => ({ ...line, top: line.top + wordSpeed }))
-          .filter((line) => line.top < 100) // Keep within bounds
+          .filter((line) => line.top < 100)
       );
     };
 
-    // Collision detection between bullets and words
     const checkCollisions = () => {
       setBullets((prevBullets) =>
         prevBullets.filter((bullet) => {
-          // For each bullet, check all words for a collision
           let bulletHit = false;
     
-          const updatedWords = words.filter((word) => {
-            const wordLeft = word.left; // Left position of the word
-            const wordTop = word.top; // Top position of the word
-            const wordWidth = word.word.length * 10; // Estimate the word width (adjust based on font size)
-            const wordHeight = 16; // Fixed height for word (adjust based on font size)
+          // Split lines into individual words
+          const updatedWords = words.map((wordObj) => {
+            // Split the line into individual words
+            const wordParts = wordObj.word.split(/\s+/);
     
-            // Check if bullet is within the word's bounding box
-            if (
-              bullet.left >= wordLeft &&
-              bullet.left <= wordLeft + wordWidth &&
-              bullet.top >= wordTop &&
-              bullet.top <= wordTop + wordHeight
-            ) {
-              bulletHit = true;
-              return false; // Remove this word if hit
-            }
-            return true; // Keep this word if not hit
+            // Track which words are hit
+            const remainingParts = wordParts.filter((part) => {
+              const partLeft = wordObj.left + wordParts.indexOf(part) * (part.length * 10);
+              const partTop = wordObj.top;
+              const partWidth = part.length * 10;
+              const partHeight = 16;
+    
+              // Check collision for this specific word
+              const isHit = (
+                bullet.left >= partLeft &&
+                bullet.left <= partLeft + partWidth &&
+                bullet.top >= partTop &&
+                bullet.top <= partTop + partHeight
+              );
+    
+              if (isHit) {
+                bulletHit = true;
+              }
+    
+              return !isHit;
+            });
+    
+            // Reconstruct the line with remaining words
+            return {
+              ...wordObj,
+              word: remainingParts.join(' ')
+            };
           });
     
           if (bulletHit) {
-            setWords(updatedWords); // Remove the hit word
-            return false; // Remove the bullet after it hits a word
+            // Remove lines with no words left
+            setWords(updatedWords.filter(wordObj => wordObj.word.trim() !== ''));
+            return false; // Remove the bullet
           }
-          return true; // Keep the bullet if no collision
+          return true;
         })
       );
     };
@@ -175,32 +181,28 @@ const Game = () => {
     return () => cancelAnimationFrame(animationFrameId);
   }, [bullets, words]);
 
-  // Initialize words (SQL lines) at the bottom
-useEffect(() => {
-  // Reverse the sqlQuery to make the lines rise in reverse order
-  const reversedSQLQuery = [...sqlQuery].reverse(); // Create a copy and reverse it
+  useEffect(() => {
+    const reversedSQLQuery = [...sqlQuery].reverse();
 
-  const initialWords = reversedSQLQuery.map((word, index) => ({
-    word,
-    left: 4, // Align SQL text to the right of numbers
-    top: 120 - index * 3, // Maintain spacing
-  }));
+    const initialWords = reversedSQLQuery.map((word, index) => ({
+      word,
+      left: 4,
+      top: 120 - index * 3,
+    }));
 
-  const initialLineNumbers = reversedSQLQuery.map((_, index) => ({
-    number: index + 1, // Line numbers should remain in the correct order
-    top: 120 - index * 3, // Keeps spacing in sync with SQL lines
-  }));
+    const initialLineNumbers = reversedSQLQuery.map((_, index) => ({
+      number: sqlQuery.length - index,
+      top: 120 - index * 3,
+    }));
 
-  setWords(initialWords);
-  setLineNumbersState(initialLineNumbers);
-}, []);
+    setWords(initialWords);
+    setLineNumbersState(initialLineNumbers);
+  }, []);
 
   return (
     <div className="game-container">
-      {/* Player */}
       <div className="player" style={{ left: `${position}%` }}>▿</div>
 
-      {/* Bullets */}
       {bullets.map((bullet, index) => (
         <div
           key={index}
@@ -209,7 +211,6 @@ useEffect(() => {
         ></div>
       ))}
 
-      {/* Scrolling Line Numbers */}
       {lineNumbersState.map((line, index) => (
         <div
           key={`line-${index}`}
@@ -220,17 +221,16 @@ useEffect(() => {
         </div>
       ))}
 
-      {/* SQL Lines */}
-      {words.map((word, index) => (
+      {words.map((wordObj, index) => (
         <div
           key={`sql-${index}`}
           className="sql-line"
           style={{
-            left: '56px', // Fixed value for left offset (2.5rem = 40px)
-            top: `${word.top}%`
+            left: '56px',
+            top: `${wordObj.top}%`
           }}
         >
-          {word.word}
+          {wordObj.word}
         </div>
       ))}
     </div>

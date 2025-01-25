@@ -1,22 +1,22 @@
 .game-container {
-  width: 60vw; /* Adjust width as needed */
-  height: 100vh; /* Full height of the viewport */
+  width: 60vw;
+  height: 100vh;
   background-color: #1e1e1e;
   position: left;
   overflow: hidden;
 }
 
 .player {
-  width: 1rem;  /* Adjust size as needed */
-  height: 0.5rem; /* Adjust size as needed */
+  width: 1rem;
+  height: 0.5rem;
   position: absolute;
-  top: 10px; /* Position the player near the top */
+  top: 10px;
   left: 50%;
-  transform: translateX(-50%); /* Center horizontally */
-  font-size: 1.5rem; /* Adjust size for better visibility */
-  color: limegreen; /* Set the color to lime green or any color you'd like */
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  color: limegreen;
   text-align: center;
-  line-height: 2rem; /* Vertically center the character */
+  line-height: 2rem;
 }
 
 .bullet {
@@ -30,9 +30,9 @@
 .word {
   position: absolute;
   color: white;
-  font-family: 'Courier New', monospace; /* Monospaced font for code look */
+  font-family: 'Courier New', monospace;
   font-size: 20px;
-  white-space: pre-wrap; /* Preserve line breaks */
+  white-space: pre-wrap;
   text-align: left;
 }
 
@@ -41,17 +41,15 @@
   font-family: monospace;
   color: white;
   font-size: 16px;
-
 }
 
 .line-number {
   position: absolute;
-  left: 1rem; /* Keep numbers aligned on the left */
+  left: 1rem;
   color: gray;
   font-family: monospace;
   text-align: right;
   width: 10px; 
   font-size: 16px;
-
-  pointer-events: none; /* Prevent bullets from interacting */
+  pointer-events: none;
 }
