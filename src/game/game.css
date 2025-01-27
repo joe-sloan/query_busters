@@ -1,55 +1,51 @@
 .game-container {
-  width: 60vw;
+  position: relative;
+  width: 100vw;
   height: 100vh;
-  background-color: #1e1e1e;
-  position: left;
+  background: black;
   overflow: hidden;
 }
 
 .player {
-  width: 1rem;
-  height: 0.5rem;
   position: absolute;
-  top: 10px;
-  left: 50%;
+  top: 20px;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 30px solid green;
   transform: translateX(-50%);
-  font-size: 1.5rem;
-  color: limegreen;
-  text-align: center;
-  line-height: 2rem;
 }
 
 .bullet {
-  width: 3px;
-  height: 8px;
-  background-color: rgb(140, 154, 229);
   position: absolute;
-  transform: translateX(-50%);
+  width: 5px;
+  height: 10px;
+  background: red;
 }
 
-.word {
+.blockRow {
   position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.row-number {
   color: white;
-  font-family: 'Courier New', monospace;
   font-size: 20px;
-  white-space: pre-wrap;
-  text-align: left;
 }
 
-.sql-line {
+.enemy {
+  height: 20px;
+  background: blue;
   position: absolute;
-  font-family: monospace;
-  color: white;
-  font-size: 16px;
-}
-
-.line-number {
-  position: absolute;
-  left: 1rem;
-  color: gray;
-  font-family: monospace;
-  text-align: right;
-  width: 10px; 
-  font-size: 16px;
-  pointer-events: none;
+  display: inline-flex; /* This allows the block to adjust its width based on the content */
+  bottom: 0;
+  margin-right: 10px;
+  color: white; /* Text color */
+  font-size: 1rem; /* Font size for the text */
+  
 }
