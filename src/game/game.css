@@ -26,15 +26,15 @@
   font-family: monospace;
   font-size: 1rem;
   margin-left: 10px;
+  
 }
 
 .enemy {
   height: 20px;
-  /* background: blue; */
+  background: blue;
   color: white;
   font-family: monospace;
   font-size: 1rem;
-  padding: 0 10px;
   line-height: 20px;
   white-space: nowrap;
 }
