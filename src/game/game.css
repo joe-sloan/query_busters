@@ -7,18 +7,30 @@
 }
 
 .player {
+  position: absolute;
+  top: 20px;
   width: 0;
   height: 0;
   border-left: 15px solid transparent;
   border-right: 15px solid transparent;
   border-top: 30px solid green;
-  transform: translateX(-15px); /* Center the triangle */
+  transform: translateX(-50%);
 }
 
 .bullet {
+  position: absolute;
   width: 5px;
   height: 10px;
   background: red;
+}
+
+.blockRow {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
 }
 
 .row-number {
@@ -26,15 +38,14 @@
   font-family: monospace;
   font-size: 1rem;
   margin-left: 10px;
-  
 }
 
 .enemy {
   height: 20px;
   background: blue;
   color: white;
-  font-family: monospace;
   font-size: 1rem;
+  padding: 0 10px;
   line-height: 20px;
   white-space: nowrap;
 }
