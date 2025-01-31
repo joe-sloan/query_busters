@@ -2,39 +2,108 @@
   position: relative;
   width: 100vw;
   height: 100vh;
-  background: black;
+  background: rgb(32, 32, 32);
   overflow: hidden;
 }
 
 .player {
+  position: absolute;
+  top: 20px;
   width: 0;
   height: 0;
-  border-left: 15px solid transparent;
-  border-right: 15px solid transparent;
-  border-top: 30px solid green;
-  transform: translateX(-15px); /* Center the triangle */
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid rgb(60, 255, 69);
+  transform: translateX(-50%);
 }
 
 .bullet {
-  width: 5px;
-  height: 10px;
-  background: red;
+  position: absolute;
+  width: 3px;
+  height: 8px;
+  background: rgb(60, 255, 69);
+}
+
+.blockRow {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .row-number {
-  color: white;
+  color: rgb(178, 178, 178);
   font-family: monospace;
   font-size: 1rem;
   margin-left: 10px;
+  height: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .enemy {
-  height: 20px;
-  /* background: blue; */
+  position: absolute;
   color: white;
   font-family: monospace;
   font-size: 1rem;
-  padding: 0 10px;
-  line-height: 20px;
+  padding: 0 5px;
+  height: 20px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.game-over-header {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%; /* Add this */
+}
+
+h1, h2 {
+  font-family: monospace;
+  color: rgb(254, 255, 255);
+  margin: 0; /* Add this to remove default margins */
+  padding: 10px 0; /* Add this for some vertical spacing between elements */
+  text-align: center; /* Add this */
+}
+
+h1 {
+  font-size: 48px;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 200;
+  color: rgb(197, 197, 197);
+}
+
+.start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ascii-art {
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: pre-wrap;
+  text-align: left;
+  color: rgb(163, 163, 255);
+}
+
+.press-space {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 10px;
+  animation: blink 1s step-start infinite;
+  font-family: monospace;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
 }
