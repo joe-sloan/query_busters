@@ -12,6 +12,12 @@ const Game = () => {
   const [enemies, setEnemies] = useState([]);
   const [position, setPosition] = useState(500);
 
+  //Numbering
+  const lineNumbers = [];
+  for (let i = 1; i <= 10; i++) {
+    lineNumbers.push(i); // Add each number to the array
+  }
+
 
   //Game States
   const [gameStarted, setGameStarted] = useState(false);
@@ -44,42 +50,42 @@ const Game = () => {
   };
 
   const SQL_COLORS = {
-    keywords: '#e357ff',    // pink
-    functions: '#f6ff78',   // yellow
+    keywords: '#ECA2FB',    // pink
+    functions: '#DCDCAA',   // yellow
     operators: '#FFFFFF',   // white
     strings: '#CE9178',     // orange/salmon
-    punctuation: '#D4D4D4', // white
-    default: '#9CDCFE'      // light blue
+    punctuation: '#FFFFFF', // white
+    default: '#4CB7F2'      // light blue
   };
 
   const getSqlTokenType = (word) => {
     const upperWord = word.toUpperCase();
-
-    // Check if it's a quoted string (starts and ends with quote)
-    if (word.startsWith("'") && word.endsWith("'")) {
+  
+    // Check if it contains a quote (either at start or end)
+    if (word.includes("'")) {
       return 'strings';
     }
-
+  
     // Check if it's a keyword
     if (SQL_SYNTAX.keywords.includes(upperWord)) {
       return 'keywords';
     }
-
+  
     // Check if it's a function
     if (SQL_SYNTAX.functions.includes(upperWord)) {
       return 'functions';
     }
-
+  
     // Check if it's an operator
     if (SQL_SYNTAX.operators.includes(upperWord)) {
       return 'operators';
     }
-
+  
     // Check if it's punctuation
     if (SQL_SYNTAX.punctuation.includes(word)) {
       return 'punctuation';
     }
-
+  
     return 'default';
   };
 
@@ -146,7 +152,8 @@ const Game = () => {
     const updatePosition = () => {
       setPosition((prev) => {
         const newPos = prev + velocity;
-        return Math.max(0, Math.min(gameWidth, newPos));
+        const minPosition = 60; // This creates the left padding
+        return Math.max(minPosition, Math.min(gameWidth, newPos));
       });
       animationFrameId = requestAnimationFrame(updatePosition);
     };
@@ -177,33 +184,30 @@ const Game = () => {
   // New effect for upward text movement
   useEffect(() => {
     let animationFrameId;
-
+  
     const updateTextPosition = () => {
       if (!isMoving || gameOver) return;
-
+  
       setTextPosition((prev) => {
         const newPos = prev - textSpeed;
-
-        const enemyAtTopOfScreen = enemies.some(enemy => 
-          enemy.isWord &&  // Only check actual words
-          newPos + (enemy.lineIndex * 30) <= 0 && 
-          newPos + (enemy.lineIndex * 30) > -30
+  
+        const enemyReachedTop = enemies.some(
+          enemy => enemy.isWord && newPos + (enemy.lineIndex * 30) <= 0
         );
-
-        // Check if any text has reached the top
-        if (newPos <= 0) {
+  
+        if (enemyReachedTop) {
           setGameOver(true);
           return prev;
         }
         return newPos;
       });
-
+  
       animationFrameId = requestAnimationFrame(updateTextPosition);
     };
-
+  
     animationFrameId = requestAnimationFrame(updateTextPosition);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isMoving, gameOver]);
+  }, [isMoving, gameOver, enemies]);
 
   const fireBullet = () => {
     if (gameOver) return;
@@ -264,6 +268,7 @@ const Game = () => {
           color: color,
           isHit: false,
           isWord: true  // New flag to distinguish from row numbers
+          
         });
 
         currentLeft += wordWidth;
@@ -309,18 +314,18 @@ const Game = () => {
                     40404040404            
                 4040404       4040        
               40       404       4040     
-            40           40      40  40    
-          40 404040       40     40   40   
-         404      4040    40    40     40  
-        404           40  40   40       40  
+           40            40       40 40    
+         40 404040        40      40  40   
+        404      4040     40     40     40  
+       404           40  40    40       40  
        40        4040  4040  40        4040 
        40     404    40404040        40  40
        40  40        40404040      40    40
-        4040     404   4040  40404       40 
-        404     40   40   40            40 
-          40    40   40     4040        40   
-          40   40     40       40404  40   
-            40  40     40           404    
+       4040       404  4040  40404       40 
+        404     40   40   40             40 
+         40     40   40     4040        40   
+          40   40     40       40404   40   
+            40  40     40            404    
               40404      404       40      
                   4040      404040        
                       404040404                      
@@ -330,8 +335,8 @@ const Game = () => {
         <p>
             If the issue persists, please visit our{" "}
             <a href="https://help.coalesce.io/hc/en-us" target="_blank" rel="noopener noreferrer">
-              support page
-            </a>.
+              support page.
+            </a>
           </p>
         <p className="press-space">[Press Space]</p>
       </div>
@@ -375,25 +380,24 @@ const Game = () => {
         }}
       >
         {enemies.reduce((acc, enemy) => {
-          if (!acc.some(item => item.key === `row-${enemy.lineIndex}`)) {
-            acc.push(enemy.lineIndex);
-            return [
-              ...acc,
-              <div
-                key={`row-${enemy.lineIndex}`}
-                className="row-number"
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  top: `${enemy.lineIndex * 30}px`
-                }}
-              >
-                {(enemy.lineIndex + 1).toString().padStart(2, '0')}
-              </div>
-            ];
-          }
-          return acc;
-        }, [])}
+ if (!acc.some(item => item.key === `row-${enemy.lineIndex}`)) {
+   return [
+     ...acc,
+     <div
+       key={`row-${enemy.lineIndex}`}
+       className="row-number"
+       style={{
+         position: 'absolute',
+         left: '10px',
+         top: `${enemy.lineIndex * 30}px`
+       }}
+     >
+       {(enemy.lineIndex + 1).toString().padStart(2, '0')}
+     </div>
+   ];
+ }
+ return acc;
+}, [])}
         {enemies.map((enemy) => (
           <div
             key={enemy.id}
