@@ -31,7 +31,10 @@ const Game = () => {
     setVelocity(0);
     setIsMoving(true);
     generateEnemies();
+    setScore(0);
   };
+  
+  const [score, setScore] = useState(0);
 
   //Motion Constants
   const [textPosition, setTextPosition] = useState(window.innerHeight - 1); // Start from bottom
@@ -42,7 +45,7 @@ const Game = () => {
   
   //Syntax highlighting
   const SQL_SYNTAX = {
-    keywords: ['SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'AS'],
+    keywords: ['SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'AS', 'JOIN'],
     functions: ['CURRENT_TIMESTAMP', 'COUNT'],
     operators: ['AND', '=', '>', 'TRUE', 'TRUE,', 'FALSE,', 'FALSE'],
     strings: ["'"],
@@ -113,7 +116,6 @@ const Game = () => {
   useEffect(() => {
     const handleKeyDown = (event) => {
       
-
       if (event.key === "Enter" && gameOver) {
         restartGame(); // Restart game when space is pressed
         return;
@@ -196,6 +198,11 @@ const Game = () => {
         );
   
         if (enemyReachedTop) {
+          // Calculate score based on lowest line with remaining enemies
+          const remainingLines = enemies
+            .filter(enemy => !enemy.isHit)
+            .map(enemy => enemy.lineIndex + 1);
+          setScore(Math.min(...remainingLines) - 1);
           setGameOver(true);
           return prev;
         }
@@ -235,7 +242,59 @@ const Game = () => {
       "GROUP BY e.page_url,",
       "HAVING COUNT(e.id) > 0,",
       "ORDER BY timestamp DESC,",
-      "LIMIT 1;"
+      "LIMIT 1;",
+    //   "",
+    //   "",
+    //   "",
+    //   "",
+    //   "SELECT m.member_name",
+    //     "m.join_date, ",
+    //     "c.cult_name, ",
+    //     "c.cult_beliefs,",
+    //     "r.ritual_name,",
+    //     "r.ritual_date,",
+    //     "b.benefit_name,",
+    //     "b.benefit_description,",
+    //     "d.dedication_level,",
+    //     "t.trust_factor",
+    //   "FROM cult_members m",
+    //   "JOIN cults c ON m.cult_id = c.cult_id",
+    //   "JOIN rituals r ON c.cult_id = r.cult_id",
+    //   "JOIN benefits b ON c.cult_id = b.cult_id",
+    //   "JOIN dedication d ON m.member_id = d.member_id",
+    //   "JOIN trust t ON m.member_id = t.member_id",
+    //   "WHERE m.join_date >= '2023-01-01'",
+    //     "AND r.ritual_type = 'Initiation'",
+    //     "AND d.dedication_level = 'High'",
+    //     "AND t.trust_factor > 7",
+    //   "ORDER BY m.join_date DESC;",
+        ");",
+    "",
+    "",
+    "",
+    "",
+      "CREATE TABLE masterpiece (",
+        "id SERIAL PRIMARY KEY,",
+        "title VARCHAR(255) NOT NULL DEFAULT 'Untitled Masterpiece',",
+        "artist_name VARCHAR(255) NOT NULL,",
+        "inspiration TEXT CHECK (LENGTH(inspiration) > 10),",
+        "medium VARCHAR(100) CHECK (medium IN ('oil paint', 'marble', 'bronze', 'digital', 'music')),",
+        "complexity INT CHECK (complexity BETWEEN 1 AND 10),",
+        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,",
+        "is_timeless BOOLEAN DEFAULT TRUE",
+    "INSERT INTO masterpiece (artist_name, inspiration, medium, complexity)",  
+    "VALUES",
+        "('Leonardo da Vinci', 'A dream of flight and human ingenuity', 'oil paint', 10),",  
+        "('Michelangelo', 'The struggle of man reaching for the divine', 'marble', 9),",  
+        "('Beethoven', 'The sound of triumph over adversity', 'music', 10),",  
+        "('Van Gogh', 'The stars whisper stories in the night sky', 'oil paint', 8);",  
+    
+    "SELECT * FROM masterpiece",  
+    "WHERE is_timeless = TRUE",  
+    "ORDER BY complexity DESC",  
+    "LIMIT 1;",
+
+
     ];
     const newEnemies = [];
     const lineSpacing = 30;
@@ -346,8 +405,9 @@ const Game = () => {
   return (
     <div className="game-container">
       {gameOver && (
-        <div className="game-over-header">
+        <div className="game-over-screen">
           <h1>GAME OVER</h1>
+          <h2>ERROR: Query terminated at line {score}</h2>
           <h2>[Press Enter to Restart]</h2>
         </div>
       )}
