@@ -35,10 +35,13 @@ const Game = () => {
   };
   
   const [score, setScore] = useState(0);
+  const [isSpaceHeld, setIsSpaceHeld] = useState(false);
+
 
   //Motion Constants
   const [textPosition, setTextPosition] = useState(window.innerHeight - 1); // Start from bottom
-  const speed = 3;
+  const speed = 8;
+  
   const bulletSpeed = 5;
   const textSpeed = 2; // Speed at which text moves upward
   const [velocity, setVelocity] = useState(0);
@@ -127,12 +130,15 @@ const Game = () => {
       } else if (event.key === "ArrowRight") {
         setVelocity(speed);
       } else if (event.key === " " || event.key === "ArrowDown") {
+        setIsSpaceHeld(true);
         fireBullet();
       }
     };
 
     const handleKeyUp = (event) => {
-      if (
+      if (event.key === " ") {
+        setIsSpaceHeld(false);
+      } else if (
         (event.key === "ArrowLeft" && velocity < 0) ||
         (event.key === "ArrowRight" && velocity > 0)
       ) {
@@ -153,7 +159,8 @@ const Game = () => {
 
     const updatePosition = () => {
       setPosition((prev) => {
-        const newPos = prev + velocity;
+        const actualVelocity = isSpaceHeld ? velocity * 0.6 : velocity;
+        const newPos = prev + actualVelocity;
         const minPosition = 60; // This creates the left padding
         return Math.max(minPosition, Math.min(gameWidth, newPos));
       });
@@ -162,7 +169,7 @@ const Game = () => {
 
     animationFrameId = requestAnimationFrame(updatePosition);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [velocity, gameWidth]);
+  }, [velocity, gameWidth, isSpaceHeld]);
 
   useEffect(() => {
     let animationFrameId;
@@ -326,7 +333,7 @@ const Game = () => {
           text: word,
           color: color,
           isHit: false,
-          isWord: true  // New flag to distinguish from row numbers
+          isWord: word.trim().length > 0  // Only true if word contains non-space characters
           
         });
 
