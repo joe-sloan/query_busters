@@ -194,7 +194,7 @@ const Game = () => {
         const newPos = prev - textSpeed;
   
         const enemyReachedTop = enemies.some(
-          enemy => enemy.isWord && newPos + (enemy.lineIndex * 30) <= 0
+          enemy => enemy.isWord && !enemy.isHit && newPos + (enemy.lineIndex * 30) <= 0
         );
   
         if (enemyReachedTop) {
