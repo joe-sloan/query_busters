@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./game.css";
+import { SQL_LINES } from "./sqlLines"; // Import the SQL lines
+
 
 const Game = () => {
 
@@ -11,6 +13,7 @@ const Game = () => {
   const [bullets, setBullets] = useState([]);
   const [enemies, setEnemies] = useState([]);
   const [position, setPosition] = useState(500);
+  const [textPosition, setTextPosition] = useState(window.innerHeight - 1); // Start from bottom
 
   //Numbering
   const lineNumbers = [];
@@ -22,6 +25,7 @@ const Game = () => {
   //Game States
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
   const restartGame = () => {
     setGameOver(false);
     setBullets([]);
@@ -34,34 +38,37 @@ const Game = () => {
     setScore(0);
   };
   
-  const [score, setScore] = useState(0);
+
+  //Control States
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
-
-
-  //Motion Constants
-  const [textPosition, setTextPosition] = useState(window.innerHeight - 1); // Start from bottom
-  const speed = 8;
+  const [isAutoFiring, setIsAutoFiring] = useState(false);
   
+  // Add rate limiting state
+  const [lastFireTime, setLastFireTime] = useState(0);
+  const fireDelay = 50; // Milliseconds between shots
+  
+  //Motion Constants
+  const speed = 8;
   const bulletSpeed = 5;
-  const textSpeed = 2; // Speed at which text moves upward
+  const textSpeed = 1.3; // Speed at which text moves upward
   const [velocity, setVelocity] = useState(0);
   
   //Syntax highlighting
   const SQL_SYNTAX = {
-    keywords: ['SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'AS', 'JOIN'],
-    functions: ['CURRENT_TIMESTAMP', 'COUNT'],
-    operators: ['AND', '=', '>', 'TRUE', 'TRUE,', 'FALSE,', 'FALSE'],
+    keywords: ['SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'AND', 'AS', 'JOIN', 'VARCHAR', 'DEFAULT'],
+    functions: ['CURRENT_TIMESTAMP', 'COUNT','timestamp'],
+    operators: ['=', '>', 'TRUE', 'TRUE,', 'FALSE,', 'FALSE'],
     strings: ["'"],
     punctuation: [',', ';']
   };
 
   const SQL_COLORS = {
-    keywords: '#ECA2FB',    // pink
-    functions: '#DCDCAA',   // yellow
-    operators: '#FFFFFF',   // white
-    strings: '#CE9178',     // orange/salmon
-    punctuation: '#FFFFFF', // white
-    default: '#4CB7F2'      // light blue
+    keywords: '#0000FF',    // blue
+    functions: '#C700C7',   // magenta
+    operators: '#597EF7',   // blue
+    strings: '#FF0000',     // red
+    punctuation: '#000000', // black 
+    default: '#000000'      // green
   };
 
   const getSqlTokenType = (word) => {
@@ -115,29 +122,36 @@ const Game = () => {
   useEffect(() => {
     generateEnemies();
   }, []);
+  
 
+  
   useEffect(() => {
     const handleKeyDown = (event) => {
-      
       if (event.key === "Enter" && gameOver) {
-        restartGame(); // Restart game when space is pressed
+        restartGame();
         return;
       }
-      if (gameOver) return; // Prevent movement if game is over
-
+      if (gameOver) return;
+  
       if (event.key === "ArrowLeft") {
         setVelocity(-speed);
       } else if (event.key === "ArrowRight") {
         setVelocity(speed);
       } else if (event.key === " " || event.key === "ArrowDown") {
+        const now = Date.now();
+        if (!isSpaceHeld || now - lastFireTime >= fireDelay) {
+          fireBullet();
+          setLastFireTime(now);
+        }
         setIsSpaceHeld(true);
-        fireBullet();
+        setIsAutoFiring(true);
       }
     };
 
     const handleKeyUp = (event) => {
       if (event.key === " ") {
         setIsSpaceHeld(false);
+        setIsAutoFiring(false);
       } else if (
         (event.key === "ArrowLeft" && velocity < 0) ||
         (event.key === "ArrowRight" && velocity > 0)
@@ -147,12 +161,12 @@ const Game = () => {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [velocity, bullets, gameOver]);
+  window.addEventListener("keyup", handleKeyUp);
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("keyup", handleKeyUp);
+  };
+}, [velocity, bullets, gameOver, isSpaceHeld, lastFireTime]);
 
   useEffect(() => {
     let animationFrameId;
@@ -171,6 +185,7 @@ const Game = () => {
     return () => cancelAnimationFrame(animationFrameId);
   }, [velocity, gameWidth, isSpaceHeld]);
 
+  
   useEffect(() => {
     let animationFrameId;
 
@@ -238,75 +253,11 @@ const Game = () => {
   };
 
   const generateEnemies = () => {
-    const sqlLines = [
-      "SELECT 'We are sorry for the inconvenience!' AS apology_message,",
-      "'Please try again later. If the problem persists,",
-      "please contact our support team for assistance.' AS suggestion,",
-      "CURRENT_TIMESTAMP AS timestamp,",
-      "FROM error_logs e,",
-      "WHERE e.error_code = 404,",
-      "AND e.page_not_found = TRUE,",
-      "GROUP BY e.page_url,",
-      "HAVING COUNT(e.id) > 0,",
-      "ORDER BY timestamp DESC,",
-      "LIMIT 1;",
-    //   "",
-    //   "",
-    //   "",
-    //   "",
-    //   "SELECT m.member_name",
-    //     "m.join_date, ",
-    //     "c.cult_name, ",
-    //     "c.cult_beliefs,",
-    //     "r.ritual_name,",
-    //     "r.ritual_date,",
-    //     "b.benefit_name,",
-    //     "b.benefit_description,",
-    //     "d.dedication_level,",
-    //     "t.trust_factor",
-    //   "FROM cult_members m",
-    //   "JOIN cults c ON m.cult_id = c.cult_id",
-    //   "JOIN rituals r ON c.cult_id = r.cult_id",
-    //   "JOIN benefits b ON c.cult_id = b.cult_id",
-    //   "JOIN dedication d ON m.member_id = d.member_id",
-    //   "JOIN trust t ON m.member_id = t.member_id",
-    //   "WHERE m.join_date >= '2023-01-01'",
-    //     "AND r.ritual_type = 'Initiation'",
-    //     "AND d.dedication_level = 'High'",
-    //     "AND t.trust_factor > 7",
-    //   "ORDER BY m.join_date DESC;",
-        ");",
-    "",
-    "",
-    "",
-    "",
-      "CREATE TABLE masterpiece (",
-        "id SERIAL PRIMARY KEY,",
-        "title VARCHAR(255) NOT NULL DEFAULT 'Untitled Masterpiece',",
-        "artist_name VARCHAR(255) NOT NULL,",
-        "inspiration TEXT CHECK (LENGTH(inspiration) > 10),",
-        "medium VARCHAR(100) CHECK (medium IN ('oil paint', 'marble', 'bronze', 'digital', 'music')),",
-        "complexity INT CHECK (complexity BETWEEN 1 AND 10),",
-        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,",
-        "is_timeless BOOLEAN DEFAULT TRUE",
-    "INSERT INTO masterpiece (artist_name, inspiration, medium, complexity)",  
-    "VALUES",
-        "('Leonardo da Vinci', 'A dream of flight and human ingenuity', 'oil paint', 10),",  
-        "('Michelangelo', 'The struggle of man reaching for the divine', 'marble', 9),",  
-        "('Beethoven', 'The sound of triumph over adversity', 'music', 10),",  
-        "('Van Gogh', 'The stars whisper stories in the night sky', 'oil paint', 8);",  
-    
-    "SELECT * FROM masterpiece",  
-    "WHERE is_timeless = TRUE",  
-    "ORDER BY complexity DESC",  
-    "LIMIT 1;",
-
-
-    ];
+  
     const newEnemies = [];
     const lineSpacing = 30;
 
-    sqlLines.forEach((line, lineIndex) => {
+    SQL_LINES.forEach((line, lineIndex) => {
       let currentLeft = 50;
       const words = line.split(" ");
 
@@ -374,9 +325,11 @@ const Game = () => {
 
   if (!gameStarted) {
     return (
-      <div className="start-screen">
-        <pre className="ascii-art">
-          {`
+      <>
+        <header></header>
+        <div className="start-screen">
+          <pre className="ascii-art">
+            {`
                     40404040404            
                 4040404       4040        
               40       404       4040     
@@ -389,100 +342,105 @@ const Game = () => {
        40  40        40404040      40    40
        4040       404  4040  40404       40 
         404     40   40   40             40 
-         40     40   40     4040        40   
+         40    40    40     4040        40   
           40   40     40       40404   40   
             40  40     40            404    
               40404      404       40      
                   4040      404040        
                       404040404                      
           `}
-        </pre>
-        <h1>Page Not Found</h1>
-        <p>
+          </pre>
+          <div className="error-title">
+            <h1>404 ERROR:</h1>
+            <h2>Workspace "joes_test_snowflake_db" not found</h2>
+          </div>
+          <p>
             If the issue persists, please visit our{" "}
             <a href="https://help.coalesce.io/hc/en-us" target="_blank" rel="noopener noreferrer">
               support page.
             </a>
           </p>
-        <p className="press-space">[Press Space]</p>
-      </div>
+          <p className="press-space">[Press Space]</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="game-container">
-      {gameOver && (
-        <div className="game-over-screen">
-          <h1>GAME OVER</h1>
-          <h2>ERROR: Query terminated at line {score}</h2>
-          <h2>[Press Enter to Restart]</h2>
-        </div>
-      )}
-      <div
-        className="player"
-        style={{
-          left: `${position}px`,
-          position: 'absolute',
-          top: '20px'
-        }}
-      />
-      {bullets.map((bullet, index) => (
-        <div
-          key={index}
-          className="bullet"
-          style={{
-            left: `${bullet.left}px`,
-            top: `${bullet.top}px`,
-            position: 'absolute'
-          }}
-        />
-      ))}
-      <div
-        className="blockRow"
-        style={{
-          position: 'absolute',
-          top: `${textPosition}px`,
-          left: '0',
-          width: '100%'
-        }}
-      >
-        {enemies.reduce((acc, enemy) => {
- if (!acc.some(item => item.key === `row-${enemy.lineIndex}`)) {
-   return [
-     ...acc,
-     <div
-       key={`row-${enemy.lineIndex}`}
-       className="row-number"
-       style={{
-         position: 'absolute',
-         left: '10px',
-         top: `${enemy.lineIndex * 30}px`
-       }}
-     >
-       {(enemy.lineIndex + 1).toString().padStart(2, '0')}
-     </div>
-   ];
- }
- return acc;
-}, [])}
-        {enemies.map((enemy) => (
-          <div
-            key={enemy.id}
-            className="enemy"
-            style={{
-              position: 'absolute',
-              left: `${enemy.left}px`,
-              top: `${enemy.lineIndex * 30}px`, // Space each line vertically
-              width: `${enemy.width}px`,
-              visibility: enemy.isHit ? 'hidden' : 'visible',
-              color: enemy.color
-            }}
-          >
-            {enemy.text}
+    <>
+      <header></header>
+      <div className="game-container">
+        {gameOver && (
+          <div className="game-over-screen">
+            <h1>GAME OVER</h1>
+            <h2>ERROR: Query terminated at line {score}</h2>
+            <h2>[Press Enter to Restart]</h2>
           </div>
+        )}
+        <div
+          className="player"
+          style={{
+            left: `${position}px`,
+            position: 'absolute',
+            top: '20px'
+          }} />
+        {bullets.map((bullet, index) => (
+          <div
+            key={index}
+            className="bullet"
+            style={{
+              left: `${bullet.left}px`,
+              top: `${bullet.top}px`,
+              position: 'absolute'
+            }} />
         ))}
+        <div
+          className="blockRow"
+          style={{
+            position: 'absolute',
+            top: `${textPosition}px`,
+            left: '0',
+            width: '100%'
+          }}
+        >
+          {enemies.reduce((acc, enemy) => {
+            if (!acc.some(item => item.key === `row-${enemy.lineIndex}`)) {
+              return [
+                ...acc,
+                <div
+                  key={`row-${enemy.lineIndex}`}
+                  className="row-number"
+                  style={{
+                    position: 'absolute',
+                    left: '10px',
+                    top: `${enemy.lineIndex * 30}px`
+                  }}
+                >
+                  {(enemy.lineIndex + 1).toString().padStart(2, '0')}
+                </div>
+              ];
+            }
+            return acc;
+          }, [])}
+          {enemies.map((enemy) => (
+            <div
+              key={enemy.id}
+              className="enemy"
+              style={{
+                position: 'absolute',
+                left: `${enemy.left}px`,
+                top: `${enemy.lineIndex * 30}px`, // Space each line vertically
+                width: `${enemy.width}px`,
+                visibility: enemy.isHit ? 'hidden' : 'visible',
+                color: enemy.color
+              }}
+            >
+              {enemy.text}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
