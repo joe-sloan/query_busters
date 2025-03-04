@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./game.css";
 import { SQL_LINES } from "./sqlLines"; // Import the SQL lines
 
@@ -7,6 +7,9 @@ const Game = () => {
 
   //Game Parameters
   const [gameWidth, setGameWidth] = useState(window.innerWidth);
+  const autoFireIntervalRef = useRef(null);
+  // Add this near your other ref
+const positionRef = useRef(500);
   
   //Object States
   const [isMoving, setIsMoving] = useState(false);
@@ -14,6 +17,7 @@ const Game = () => {
   const [enemies, setEnemies] = useState([]);
   const [position, setPosition] = useState(500);
   const [textPosition, setTextPosition] = useState(window.innerHeight - 1); // Start from bottom
+  const [isAutoFiring, setIsAutoFiring] = useState(false);
 
   //Numbering
   const lineNumbers = [];
@@ -41,11 +45,11 @@ const Game = () => {
 
   //Control States
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
-  const [isAutoFiring, setIsAutoFiring] = useState(false);
+
   
   // Add rate limiting state
   const [lastFireTime, setLastFireTime] = useState(0);
-  const fireDelay = 50; // Milliseconds between shots
+  const fireDelay = 150; // Milliseconds between shots
   
   //Motion Constants
   const speed = 8;
@@ -123,8 +127,29 @@ const Game = () => {
     generateEnemies();
   }, []);
   
-
+  // Auto-firing effect
+  useEffect(() => {
+    // This effect handles the auto-firing logic
+    if (isAutoFiring && !gameOver) {
+      // Fire the first bullet immediately
+      fireBullet();
+      
+      // Set up the interval for continuous firing
+      autoFireIntervalRef.current = setInterval(() => {
+        fireBullet();
+      }, fireDelay);
+    }
+    
+    // Clean up the interval when auto-firing stops or component unmounts
+    return () => {
+      if (autoFireIntervalRef.current) {
+        clearInterval(autoFireIntervalRef.current);
+        autoFireIntervalRef.current = null;
+      }
+    };
+  }, [isAutoFiring, gameOver, fireDelay]);
   
+  // Key handling effect
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Enter" && gameOver) {
@@ -132,24 +157,19 @@ const Game = () => {
         return;
       }
       if (gameOver) return;
-  
+    
       if (event.key === "ArrowLeft") {
         setVelocity(-speed);
       } else if (event.key === "ArrowRight") {
         setVelocity(speed);
       } else if (event.key === " " || event.key === "ArrowDown") {
-        const now = Date.now();
-        if (!isSpaceHeld || now - lastFireTime >= fireDelay) {
-          fireBullet();
-          setLastFireTime(now);
-        }
         setIsSpaceHeld(true);
         setIsAutoFiring(true);
       }
     };
 
     const handleKeyUp = (event) => {
-      if (event.key === " ") {
+      if (event.key === " " || event.key === "ArrowDown") {
         setIsSpaceHeld(false);
         setIsAutoFiring(false);
       } else if (
@@ -161,31 +181,39 @@ const Game = () => {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-  window.addEventListener("keyup", handleKeyUp);
-  return () => {
-    window.removeEventListener("keydown", handleKeyDown);
-    window.removeEventListener("keyup", handleKeyUp);
-  };
-}, [velocity, bullets, gameOver, isSpaceHeld, lastFireTime]);
-
-  useEffect(() => {
-    let animationFrameId;
-
-    const updatePosition = () => {
-      setPosition((prev) => {
-        const actualVelocity = isSpaceHeld ? velocity * 0.6 : velocity;
-        const newPos = prev + actualVelocity;
-        const minPosition = 60; // This creates the left padding
-        return Math.max(minPosition, Math.min(gameWidth, newPos));
-      });
-      animationFrameId = requestAnimationFrame(updatePosition);
+    window.addEventListener("keyup", handleKeyUp);
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
+  }, [velocity, gameOver, speed]);
 
+  // Player position update effect
+  // Modify your position effect to update the ref
+useEffect(() => {
+  let animationFrameId;
+
+  const updatePosition = () => {
+    setPosition((prev) => {
+      const actualVelocity = isSpaceHeld ? velocity * 0.6 : velocity;
+      const newPos = prev + actualVelocity;
+      const minPosition = 60; // This creates the left padding
+      const clampedPos = Math.max(minPosition, Math.min(gameWidth, newPos));
+      
+      // Update the ref with the latest position
+      positionRef.current = clampedPos;
+      
+      return clampedPos;
+    });
     animationFrameId = requestAnimationFrame(updatePosition);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [velocity, gameWidth, isSpaceHeld]);
+  };
 
-  
+  animationFrameId = requestAnimationFrame(updatePosition);
+  return () => cancelAnimationFrame(animationFrameId);
+}, [velocity, gameWidth, isSpaceHeld]);
+
+  // Bullet movement effect
   useEffect(() => {
     let animationFrameId;
 
@@ -205,7 +233,7 @@ const Game = () => {
     return () => cancelAnimationFrame(animationFrameId);
   }, [bullets, gameOver]);
 
-  // New effect for upward text movement
+  // Text movement effect
   useEffect(() => {
     let animationFrameId;
   
@@ -240,12 +268,12 @@ const Game = () => {
 
   const fireBullet = () => {
     if (gameOver) return;
-
+  
     setBullets((prevBullets) => [
       ...prevBullets,
-      { left: position, top: 20 }
+      { left: positionRef.current, top: 20 }
     ]);
-
+  
     // Start text movement after first shot
     if (!isMoving) {
       setIsMoving(true);
