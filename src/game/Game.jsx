@@ -9,8 +9,8 @@ const Game = () => {
   const [gameWidth, setGameWidth] = useState(window.innerWidth);
   const autoFireIntervalRef = useRef(null);
   // Add this near your other ref
-const positionRef = useRef(500);
-  
+  const positionRef = useRef(500);
+
   //Object States
   const [isMoving, setIsMoving] = useState(false);
   const [bullets, setBullets] = useState([]);
@@ -41,26 +41,26 @@ const positionRef = useRef(500);
     generateEnemies();
     setScore(0);
   };
-  
+
 
   //Control States
   const [isSpaceHeld, setIsSpaceHeld] = useState(false);
 
-  
+
   // Add rate limiting state
   const [lastFireTime, setLastFireTime] = useState(0);
-  const fireDelay = 150; // Milliseconds between shots
-  
+  const fireDelay = 100; // Milliseconds between shots
+
   //Motion Constants
   const speed = 8;
   const bulletSpeed = 5;
   const textSpeed = 1.3; // Speed at which text moves upward
   const [velocity, setVelocity] = useState(0);
-  
+
   //Syntax highlighting
   const SQL_SYNTAX = {
-    keywords: ['SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'AND', 'AS', 'JOIN', 'VARCHAR', 'DEFAULT'],
-    functions: ['CURRENT_TIMESTAMP', 'COUNT','timestamp'],
+    keywords: ['SELECT', 'FROM', 'WHERE', 'GROUP', 'BY', 'HAVING', 'ORDER', 'LIMIT', 'AND', 'AS', 'JOIN', 'VARCHAR', 'DEFAULT', 'CREATE', 'TABLE', 'DESC,', 'ASC,', 'PRIMARY', 'KEY', 'VALUES', 'INSERT', 'LEFT', 'RIGHT'],
+    functions: ['CURRENT_TIMESTAMP', 'COUNT', 'timestamp'],
     operators: ['=', '>', 'TRUE', 'TRUE,', 'FALSE,', 'FALSE'],
     strings: ["'"],
     punctuation: [',', ';']
@@ -77,32 +77,32 @@ const positionRef = useRef(500);
 
   const getSqlTokenType = (word) => {
     const upperWord = word.toUpperCase();
-  
+
     // Check if it contains a quote (either at start or end)
     if (word.includes("'")) {
       return 'strings';
     }
-  
+
     // Check if it's a keyword
     if (SQL_SYNTAX.keywords.includes(upperWord)) {
       return 'keywords';
     }
-  
+
     // Check if it's a function
     if (SQL_SYNTAX.functions.includes(upperWord)) {
       return 'functions';
     }
-  
+
     // Check if it's an operator
     if (SQL_SYNTAX.operators.includes(upperWord)) {
       return 'operators';
     }
-  
+
     // Check if it's punctuation
     if (SQL_SYNTAX.punctuation.includes(word)) {
       return 'punctuation';
     }
-  
+
     return 'default';
   };
 
@@ -112,7 +112,7 @@ const positionRef = useRef(500);
         setGameStarted(true);
       }
     };
-  
+
     window.addEventListener("keydown", handleStart);
     return () => window.removeEventListener("keydown", handleStart);
   }, []);
@@ -126,20 +126,20 @@ const positionRef = useRef(500);
   useEffect(() => {
     generateEnemies();
   }, []);
-  
+
   // Auto-firing effect
   useEffect(() => {
     // This effect handles the auto-firing logic
     if (isAutoFiring && !gameOver) {
       // Fire the first bullet immediately
       fireBullet();
-      
+
       // Set up the interval for continuous firing
       autoFireIntervalRef.current = setInterval(() => {
         fireBullet();
       }, fireDelay);
     }
-    
+
     // Clean up the interval when auto-firing stops or component unmounts
     return () => {
       if (autoFireIntervalRef.current) {
@@ -148,7 +148,7 @@ const positionRef = useRef(500);
       }
     };
   }, [isAutoFiring, gameOver, fireDelay]);
-  
+
   // Key handling effect
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -157,7 +157,7 @@ const positionRef = useRef(500);
         return;
       }
       if (gameOver) return;
-    
+
       if (event.key === "ArrowLeft") {
         setVelocity(-speed);
       } else if (event.key === "ArrowRight") {
@@ -182,7 +182,7 @@ const positionRef = useRef(500);
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    
+
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
@@ -190,28 +190,27 @@ const positionRef = useRef(500);
   }, [velocity, gameOver, speed]);
 
   // Player position update effect
-  // Modify your position effect to update the ref
-useEffect(() => {
-  let animationFrameId;
+  useEffect(() => {
+    let animationFrameId;
 
-  const updatePosition = () => {
-    setPosition((prev) => {
-      const actualVelocity = isSpaceHeld ? velocity * 0.6 : velocity;
-      const newPos = prev + actualVelocity;
-      const minPosition = 60; // This creates the left padding
-      const clampedPos = Math.max(minPosition, Math.min(gameWidth, newPos));
-      
-      // Update the ref with the latest position
-      positionRef.current = clampedPos;
-      
-      return clampedPos;
-    });
+    const updatePosition = () => {
+      setPosition((prev) => {
+        const actualVelocity = isSpaceHeld ? velocity * 0.5 : velocity;
+        const newPos = prev + actualVelocity;
+        const minPosition = 60; // This creates the left padding
+        const clampedPos = Math.max(minPosition, Math.min(gameWidth, newPos));
+
+        // Update the ref with the latest position
+        positionRef.current = clampedPos;
+
+        return clampedPos;
+      });
+      animationFrameId = requestAnimationFrame(updatePosition);
+    };
+
     animationFrameId = requestAnimationFrame(updatePosition);
-  };
-
-  animationFrameId = requestAnimationFrame(updatePosition);
-  return () => cancelAnimationFrame(animationFrameId);
-}, [velocity, gameWidth, isSpaceHeld]);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [velocity, gameWidth, isSpaceHeld]);
 
   // Bullet movement effect
   useEffect(() => {
@@ -235,45 +234,44 @@ useEffect(() => {
 
   // Text movement effect
   useEffect(() => {
-    let animationFrameId;
-  
-    const updateTextPosition = () => {
-      if (!isMoving || gameOver) return;
-  
-      setTextPosition((prev) => {
-        const newPos = prev - textSpeed;
-  
-        const enemyReachedTop = enemies.some(
-          enemy => enemy.isWord && !enemy.isHit && newPos + (enemy.lineIndex * 30) <= 0
-        );
-  
-        if (enemyReachedTop) {
-          // Calculate score based on lowest line with remaining enemies
-          const remainingLines = enemies
-            .filter(enemy => !enemy.isHit)
-            .map(enemy => enemy.lineIndex + 1);
-          setScore(Math.min(...remainingLines) - 1);
-          setGameOver(true);
-          return prev;
-        }
-        return newPos;
-      });
-  
-      animationFrameId = requestAnimationFrame(updateTextPosition);
-    };
-  
+  let animationFrameId;
+
+  const updateTextPosition = () => {
+    if (!isMoving || gameOver) return;
+
+    setTextPosition((prev) => {
+      const newPos = prev - textSpeed;
+
+      // Find enemies that have reached the top
+      const enemiesAtTop = enemies.filter(
+        enemy => enemy.isWord && !enemy.isHit && newPos + (enemy.lineIndex * 30) <= 0
+      );
+      
+      if (enemiesAtTop.length > 0) {
+        // Get the actual line that reached the top
+        const reachedLine = Math.min(...enemiesAtTop.map(enemy => enemy.lineIndex + 1));
+        setScore(reachedLine);
+        setGameOver(true);
+        return prev;
+      }
+      return newPos;
+    });
+
     animationFrameId = requestAnimationFrame(updateTextPosition);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [isMoving, gameOver, enemies]);
+  };
+
+  animationFrameId = requestAnimationFrame(updateTextPosition);
+  return () => cancelAnimationFrame(animationFrameId);
+}, [isMoving, gameOver, enemies]);
 
   const fireBullet = () => {
     if (gameOver) return;
-  
+
     setBullets((prevBullets) => [
       ...prevBullets,
       { left: positionRef.current, top: 20 }
     ]);
-  
+
     // Start text movement after first shot
     if (!isMoving) {
       setIsMoving(true);
@@ -281,14 +279,15 @@ useEffect(() => {
   };
 
   const generateEnemies = () => {
-  
     const newEnemies = [];
-    const lineSpacing = 30;
-
+    
     SQL_LINES.forEach((line, lineIndex) => {
       let currentLeft = 50;
       const words = line.split(" ");
-
+      
+      // Track if we're inside a string for this line
+      let insideString = false;
+      
       words.forEach((word, wordIndex) => {
         const measuringDiv = document.createElement("div");
         measuringDiv.style.position = "absolute";
@@ -297,13 +296,28 @@ useEffect(() => {
         measuringDiv.className = "enemy";
         measuringDiv.textContent = word;
         document.body.appendChild(measuringDiv);
-
+  
         const wordWidth = measuringDiv.getBoundingClientRect().width;
         document.body.removeChild(measuringDiv);
-
-        const tokenType = getSqlTokenType(word);
+  
+        // Get the token type using the original function
+        let tokenType = getSqlTokenType(word);
+        
+        // Count single quotes in this word
+        const quoteCount = (word.match(/'/g) || []).length;
+        
+        // If odd number of quotes, toggle string state
+        if (quoteCount % 2 === 1) {
+          insideString = !insideString;
+        }
+        
+        // Override token type only if we're inside a string and it's not already detected as a string
+        if (insideString && tokenType !== 'strings') {
+          tokenType = 'strings';
+        }
+        
         const color = SQL_COLORS[tokenType];
-
+  
         newEnemies.push({
           id: `${lineIndex}-${wordIndex}`,
           left: currentLeft,
@@ -312,14 +326,16 @@ useEffect(() => {
           text: word,
           color: color,
           isHit: false,
-          isWord: word.trim().length > 0  // Only true if word contains non-space characters
-          
+          isWord: word.trim().length > 0
         });
-
+  
         currentLeft += wordWidth;
       });
+      
+      // Reset string state at the end of each line
+      insideString = false;
     });
-
+  
     setEnemies(newEnemies);
   };
 

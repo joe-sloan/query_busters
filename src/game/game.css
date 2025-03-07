@@ -24,14 +24,14 @@ header {
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 10px solid #0EC943;
+  border-top: 10px solid #1890FF;
   transform: translateX(-50%);
 }
 
 .bullet {
   position: absolute;
-  width: 4px;
-  height: 10px;
+  width: 3px;
+  height: 8px;
   background: #7899F3;
 }
 
