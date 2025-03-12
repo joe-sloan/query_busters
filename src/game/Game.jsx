@@ -9,13 +9,13 @@ const Game = () => {
   const [gameWidth, setGameWidth] = useState(window.innerWidth);
   const autoFireIntervalRef = useRef(null);
   // Add this near your other ref
-  const positionRef = useRef(500);
+  const positionRef = useRef(75);
 
   //Object States
   const [isMoving, setIsMoving] = useState(false);
   const [bullets, setBullets] = useState([]);
   const [enemies, setEnemies] = useState([]);
-  const [position, setPosition] = useState(500);
+  const [position, setPosition] = useState(75);
   const [textPosition, setTextPosition] = useState(window.innerHeight - 1); // Start from bottom
   const [isAutoFiring, setIsAutoFiring] = useState(false);
 
@@ -32,11 +32,13 @@ const Game = () => {
   const [score, setScore] = useState(0);
   const restartGame = () => {
     lastTimeRef.current = 0; // Reset the time reference
+    lastBulletTimeRef.current = 0; // Reset bullet time reference
+    lastTextTimeRef.current = 0; // Reset text time reference
     setGameOver(false);
     setBullets([]);
     setEnemies([]);
     setTextPosition(window.innerHeight - 40);
-    setPosition(500);
+    setPosition(75);
     setVelocity(0);
     setIsMoving(true);
     generateEnemies();
@@ -48,14 +50,16 @@ const Game = () => {
 
 
   // Add rate limiting state
-
+  
 
   //Timing Constants
   const speed = 8; // Player Speed
   const bulletSpeed = 5;
-  const textSpeed = 1.2;
+  const textSpeed = 1.3;
   const [velocity, setVelocity] = useState(0); // Player's current velocity
-  const lastTimeRef = useRef(0); //Track framerate
+  const lastTimeRef = useRef(0); // Track player framerate
+  const lastBulletTimeRef = useRef(0); // Track bullet framerate
+  const lastTextTimeRef = useRef(0); // Track text scrolling framerate
   const fireDelay = 100; // Milliseconds between shots
 
 
@@ -191,53 +195,84 @@ const Game = () => {
     };
   }, [velocity, gameOver, speed]);
 
-  // Create a unified game loop to handle all animations
-useEffect(() => {
-  let animationFrameId;
-  
-  const gameLoop = (timestamp) => {
-    if (gameOver) {
-      cancelAnimationFrame(animationFrameId);
-      return;
-    }
+  // Player position update effect - using deltaTime
+  useEffect(() => {
+    let animationFrameId;
+
+    const updatePosition = (timestamp) => {
+      const deltaTime = lastTimeRef.current ? (timestamp - lastTimeRef.current) / 1000 : 0;
+      lastTimeRef.current = timestamp;
+
+      setPosition((prev) => {
+        const actualVelocity = (isSpaceHeld ? velocity * 0.5 : velocity) * deltaTime * 60; // Normalized for 60fps
+        const newPos = prev + actualVelocity;
+        const minPosition = 60; // This creates the left padding
+        const clampedPos = Math.max(minPosition, Math.min(gameWidth, newPos));
+
+        // Update the ref with the latest position
+        positionRef.current = clampedPos;
+
+        return clampedPos;
+      });
+
+      animationFrameId = requestAnimationFrame(updatePosition);
+    };
+
+    animationFrameId = requestAnimationFrame(updatePosition);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [velocity, gameWidth, isSpaceHeld]);
+
+  // Bullet movement effect - using deltaTime
+  useEffect(() => {
+    let animationFrameId;
     
-    // Calculate delta time in seconds
-    const deltaTime = lastTimeRef.current ? (timestamp - lastTimeRef.current) / 1000 : 0;
-    lastTimeRef.current = timestamp;
-    
-    // 1. Update player position
-    setPosition((prev) => {
-      const actualVelocity = (isSpaceHeld ? velocity * 0.5 : velocity) * deltaTime * 60;
-      const newPos = prev + actualVelocity;
-      const minPosition = 60;
-      const clampedPos = Math.max(minPosition, Math.min(gameWidth, newPos));
+    const updateBullets = (timestamp) => {
+      if (gameOver) return;
       
-      // Update the ref with the latest position
-      positionRef.current = clampedPos;
+      // Calculate delta time in seconds
+      const deltaTime = lastBulletTimeRef.current ? (timestamp - lastBulletTimeRef.current) / 1000 : 0;
+      lastBulletTimeRef.current = timestamp;
       
-      return clampedPos;
-    });
-    
-    // 2. Update bullets
-    if (!gameOver) {
+      // Calculate frame-rate independent speed
+      const frameAdjustedSpeed = bulletSpeed * deltaTime * 60; // Normalized for 60fps
+      
       setBullets((prevBullets) =>
         prevBullets
           .map((bullet) => ({ 
             ...bullet, 
-            top: bullet.top + (bulletSpeed * deltaTime * 60) // Normalized for 60fps
+            top: bullet.top + frameAdjustedSpeed
           }))
           .filter((bullet) => bullet.top < window.innerHeight)
       );
       
       checkCollisions();
-    }
+      animationFrameId = requestAnimationFrame(updateBullets);
+    };
+
+    animationFrameId = requestAnimationFrame(updateBullets);
     
-    // 3. Update text position
-    if (isMoving && !gameOver) {
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [bullets, gameOver]);
+
+  // Text movement effect - using deltaTime
+  useEffect(() => {
+    let animationFrameId;
+
+    const updateTextPosition = (timestamp) => {
+      if (!isMoving || gameOver) return;
+
+      // Calculate delta time in seconds
+      const deltaTime = lastTextTimeRef.current ? (timestamp - lastTextTimeRef.current) / 1000 : 0;
+      lastTextTimeRef.current = timestamp;
+      
+      // Calculate frame-rate independent speed
+      const frameAdjustedSpeed = textSpeed * deltaTime * 60; // Normalized for 60fps
+
       setTextPosition((prev) => {
-        const frameAdjustedSpeed = textSpeed * deltaTime * 60; // Normalized for 60fps
         const newPos = prev - frameAdjustedSpeed;
-        
+
         // Find enemies that have reached the top
         const enemiesAtTop = enemies.filter(
           enemy => enemy.isWord && !enemy.isHit && newPos + (enemy.lineIndex * 30) <= 0
@@ -252,17 +287,13 @@ useEffect(() => {
         }
         return newPos;
       });
-    }
-    
-    animationFrameId = requestAnimationFrame(gameLoop);
-  };
-  
-  animationFrameId = requestAnimationFrame(gameLoop);
-  
-  return () => {
-    cancelAnimationFrame(animationFrameId);
-  };
-}, [velocity, gameWidth, isSpaceHeld, isMoving, gameOver, enemies]);
+
+      animationFrameId = requestAnimationFrame(updateTextPosition);
+    };
+
+    animationFrameId = requestAnimationFrame(updateTextPosition);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isMoving, gameOver, enemies]);
 
   const fireBullet = () => {
     if (gameOver) return;
@@ -276,67 +307,6 @@ useEffect(() => {
     if (!isMoving) {
       setIsMoving(true);
     }
-  };
-
-  const generateEnemies = () => {
-    const newEnemies = [];
-
-    SQL_LINES.forEach((line, lineIndex) => {
-      let currentLeft = 50;
-      const words = line.split(" ");
-
-      // Track if we're inside a string for this line
-      let insideString = false;
-
-      words.forEach((word, wordIndex) => {
-        const measuringDiv = document.createElement("div");
-        measuringDiv.style.position = "absolute";
-        measuringDiv.style.visibility = "hidden";
-        measuringDiv.style.whiteSpace = "nowrap";
-        measuringDiv.className = "enemy";
-        measuringDiv.textContent = word;
-        document.body.appendChild(measuringDiv);
-
-        const wordWidth = measuringDiv.getBoundingClientRect().width;
-        document.body.removeChild(measuringDiv);
-
-        // Get the token type using the original function
-        let tokenType = getSqlTokenType(word);
-
-        // Count single quotes in this word
-        const quoteCount = (word.match(/'/g) || []).length;
-
-        // If odd number of quotes, toggle string state
-        if (quoteCount % 2 === 1) {
-          insideString = !insideString;
-        }
-
-        // Override token type only if we're inside a string and it's not already detected as a string
-        if (insideString && tokenType !== 'strings') {
-          tokenType = 'strings';
-        }
-
-        const color = SQL_COLORS[tokenType];
-
-        newEnemies.push({
-          id: `${lineIndex}-${wordIndex}`,
-          left: currentLeft,
-          lineIndex: lineIndex,
-          width: wordWidth - 20,
-          text: word,
-          color: color,
-          isHit: false,
-          isWord: word.trim().length > 0
-        });
-
-        currentLeft += wordWidth;
-      });
-
-      // Reset string state at the end of each line
-      insideString = false;
-    });
-
-    setEnemies(newEnemies);
   };
 
   const checkCollisions = () => {
@@ -365,6 +335,67 @@ useEffect(() => {
         return true;
       });
     });
+  };
+
+  const generateEnemies = () => {
+    const newEnemies = [];
+    
+    SQL_LINES.forEach((line, lineIndex) => {
+      let currentLeft = 50;
+      const words = line.split(" ");
+      
+      // Track if we're inside a string for this line
+      let insideString = false;
+      
+      words.forEach((word, wordIndex) => {
+        const measuringDiv = document.createElement("div");
+        measuringDiv.style.position = "absolute";
+        measuringDiv.style.visibility = "hidden";
+        measuringDiv.style.whiteSpace = "nowrap";
+        measuringDiv.className = "enemy";
+        measuringDiv.textContent = word;
+        document.body.appendChild(measuringDiv);
+  
+        const wordWidth = measuringDiv.getBoundingClientRect().width;
+        document.body.removeChild(measuringDiv);
+  
+        // Get the token type using the original function
+        let tokenType = getSqlTokenType(word);
+        
+        // Count single quotes in this word
+        const quoteCount = (word.match(/'/g) || []).length;
+        
+        // If odd number of quotes, toggle string state
+        if (quoteCount % 2 === 1) {
+          insideString = !insideString;
+        }
+        
+        // Override token type only if we're inside a string and it's not already detected as a string
+        if (insideString && tokenType !== 'strings') {
+          tokenType = 'strings';
+        }
+        
+        const color = SQL_COLORS[tokenType];
+  
+        newEnemies.push({
+          id: `${lineIndex}-${wordIndex}`,
+          left: currentLeft,
+          lineIndex: lineIndex,
+          width: wordWidth - 20,
+          text: word,
+          color: color,
+          isHit: false,
+          isWord: word.trim().length > 0
+        });
+  
+        currentLeft += wordWidth;
+      });
+      
+      // Reset string state at the end of each line
+      insideString = false;
+    });
+  
+    setEnemies(newEnemies);
   };
 
   if (!gameStarted) {
